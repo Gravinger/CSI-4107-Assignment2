@@ -98,6 +98,57 @@ def read_stopwords():
 
     return stopwords
 
+def preprocess_docs_advanced(documents, stopwords):
+
+    stemmer = PorterStemmer()
+    preprocessed_documents = {}
+
+    for doc in documents:
+        new_doc = {}
+        title_words = []
+        text_words = []
+
+        try:
+            title = re.sub(SPACE_PUNCTUATION, " ", doc["title"])
+
+            for word in title.split(" "):
+                word = re.sub(PUNCTUATION, "", word)
+                word = word.lower().strip()
+
+                if word == "":
+                    continue
+
+                if not binary_search(word, stopwords):
+                    word = stemmer.stem(word, 0, len(word) - 1)
+
+                    title_words.append(word)
+
+            new_doc["title"] = " ".join(title_words)
+        
+        except KeyError:
+            pass
+
+        text = re.sub(SPACE_PUNCTUATION, " ", doc["text"])
+
+        for word in text.split(" "):
+            word = re.sub(PUNCTUATION, "", word)
+            word = word.lower().strip()
+
+            if word == "":
+                continue
+
+            if not binary_search(word, stopwords):
+                word = stemmer.stem(word, 0, len(word) - 1)
+
+                text_words.append(word)
+
+        new_doc["text"] = " ".join(text_words)
+
+        preprocessed_documents[doc["_id"]] = new_doc
+
+    return preprocessed_documents
+
+
 
 def main(corpus_path):
     stopwords_list = read_stopwords()
@@ -122,9 +173,9 @@ def main(corpus_path):
         return []
     else:
         # Get the result of the preprocessing on the documents
-        result = preprocess_docs(raw_documents, stopwords_list)
+        result = preprocess_docs_advanced(raw_documents, stopwords_list)
         return result
-    # print(result[len(result) - 1])
+    #print(result["0"])
 
 
 if __name__ == "__main__":
