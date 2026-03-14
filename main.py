@@ -3,7 +3,11 @@ import json
 from preprocessing import main as preprocess_main
 from indexing import build_inverted_index
 from ranking import rank_documents
-from neural_reranker import biencoder_rerank, precompute_doc_embeddings
+from neural_reranker import (
+    biencoder_rerank,
+    crossencoder_rerank,
+    precompute_doc_embeddings,
+)
 
 # Load and preprocess corpus
 doc_dict = preprocess_main(corpus_path="scifact/corpus.jsonl")
@@ -51,3 +55,11 @@ with open("Results_biencoder", "w") as file:
         reranked = biencoder_rerank(query["text"], candidates, raw_docs)
         for i, (doc_id, score) in enumerate(reranked, 1):
             file.write(f"{query['_id']} Q0 {doc_id} {i} {score:.4f} biencoder\n")
+
+# Retrieve top-100 candidates with TF-IDF, then re-rank with cross-encoder
+with open("Results_crossencoder", "w") as file:
+    for query in test_queries:
+        candidates = rank_documents(query["text"], inverted_index)[:100]
+        reranked = crossencoder_rerank(query["text"], candidates, raw_docs)
+        for i, (doc_id, score) in enumerate(reranked, 1):
+            file.write(f"{query['_id']} Q0 {doc_id} {i} {score:.4f} crossencoder\n")
